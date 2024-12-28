@@ -39,6 +39,8 @@ export default function Home() {
 
   // フォーム送信処理
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+
     setIsLoading(true);
     setErrorMessage(""); // エラーメッセージをリセット
     try {
@@ -47,7 +49,6 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
 
       if (!response.ok) {
         const error = await response.json();
