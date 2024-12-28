@@ -41,7 +41,6 @@ export default function Home() {
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setErrorMessage(""); // エラーメッセージをリセット
-
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/process`, {
         method: "POST",
