@@ -48,6 +48,7 @@ export default function Home() {
         body: JSON.stringify(data),
       });
 
+
       if (!response.ok) {
         const error = await response.json();
         setErrorMessage(`エラー: ${error.error}`);
