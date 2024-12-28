@@ -1,115 +1,174 @@
-import Image from "next/image";
-import localFont from "next/font/local";
+"use client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
+import { useState } from "react";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+// Zodスキーマ定義
+const formSchema = z.object({
+  URL: z.string().min(1, {
+    message: "URLを入力してください",
+  }),
+  pitch: z.string().min(1, {
+    message: "ピッチを入力してください",
+  }),
 });
 
 export default function Home() {
-  return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  // ローディング状態の管理
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); // エラーメッセージを追加
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // useFormの初期化
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      URL: "",
+      pitch: "",
+    },
+  });
+
+  // フォーム送信処理
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+    setErrorMessage(""); // エラーメッセージをリセット
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/process`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        setErrorMessage(`エラー: ${error.error}`);
+        return;
+      }
+
+      // ファイル名の取得とデコード
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let fileName = "processed_audio.mp3"; // デフォルト名
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
+        if (match) {
+          fileName = decodeURIComponent(match[1]); // デコードされた日本語名を取得
+        }
+      }
+
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
+    } catch (error: unknown) {
+      alert(`APIリクエストに失敗しました: ${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  return (
+    <div>
+      {!isLoading && (
+        <div className="row grid grid-cols-6 grid-rows-10 gap-4">
+          <div className="col-span-1 row-span-4" />
+          <div className="col-span-4 row-span-4 content-end">
+            <h3 className="text-center pt- place-content-end m-auto font-bold text-[2rem]">
+              Youtube動画のピッチを変更する
+            </h3>
+          </div>
+          <div className="col-span-1 row-span-4" />
+          <div className="col-span-2 row-span-6" />
+          {/* フォーム */}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="col-span-2 row-span-6 m-auto w-full"
+            >
+              <FormField
+                control={form.control}
+                name="URL"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>YouTube URL:</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="URL"
+                        {...field}
+                        disabled={isLoading} // ローディング中は入力を無効化
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="pitch"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ピッチ (半音単位):</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder=""
+                        {...field}
+                        disabled={isLoading} // ローディング中は入力を無効化
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <div className="text-center mt-2">
+                <Button type="submit" className="w-6/12" disabled={isLoading}>
+                  {isLoading ? "処理中..." : "確定"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+          {errorMessage && (
+            <p className="text-center text-red-500">{errorMessage}</p>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+
+      {/* ローディングインジケーター */}
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="spinner"></div>
+          <div className="grid grid-cols-6 grid-rows-4 gap-3">
+            <div className="col-span-6 row-span-3" />
+            <div className="col-span-2" />
+            <p className="text-center col-span-2 text-[1.5rem] font-bold">
+              音声処理中です...
+              <br />
+              この処理には数分かかる場合があります
+            </p>
+          </div>
+
+          <div className="w-full">
+            <div className="spinner-box m-auto">
+              <div className="pulse-container">
+                <div className="pulse-bubble pulse-bubble-1"></div>
+                <div className="pulse-bubble pulse-bubble-2"></div>
+                <div className="pulse-bubble pulse-bubble-3"></div>
+                <div className="pulse-bubble pulse-bubble-4"></div>
+                <div className="pulse-bubble pulse-bubble-5"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
