@@ -43,24 +43,28 @@ export default function Home() {
     setErrorMessage(""); // エラーメッセージをリセット
 
     try {
+      console.log("送信データ:", data);
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/process`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
+      console.log("レスポンスステータス:", response.status);
+
       if (!response.ok) {
         const error = await response.json();
+        console.error("エラーレスポンス:", error);
         setErrorMessage(`エラー: ${error.error}`);
         return;
       }
 
       // ファイル名の取得とデコード
       const contentDisposition = response.headers.get("Content-Disposition");
+      console.log("Content-Disposition ヘッダー:", contentDisposition);
+
       let fileName = "processed_audio.mp3"; // デフォルト名
-
-      console.log("タイトル:" + contentDisposition);
-
       if (contentDisposition) {
         const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
         if (match && match[1]) {
@@ -68,17 +72,22 @@ export default function Home() {
         }
       }
 
+      console.log("ダウンロードするファイル名:", fileName);
+
+      // ファイルのダウンロード処理
       const blob = await response.blob();
       const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
       link.download = fileName;
       link.click();
     } catch (error) {
+      console.error("APIリクエストエラー:", error);
       alert(`APIリクエストに失敗しました: ${error}`);
     } finally {
       setIsLoading(false);
     }
   };
+
 
 
 
