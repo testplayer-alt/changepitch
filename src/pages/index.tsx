@@ -46,40 +46,46 @@ export default function Home() {
       console.log("送信データ:", data);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/process`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          URL: data.URL,  // フォームから送信されたURLを使用
+          pitch: data.pitch,  // ピッチも送信
+        }),
       });
 
       console.log("レスポンスステータス:", response.status);
 
-      if (!response.ok) {
-        const error = await response.json();
-        console.error("エラーレスポンス:", error);
-        setErrorMessage(`エラー: ${error.error}`);
-        return;
-      }
+      if (response.ok) {
+        // コンテンツをバイナリとして取得
+        const blob = await response.blob();
 
-      // ファイル名の取得とデコード
-      const contentDisposition = response.headers.get("Content-Disposition");
-      console.log("Content-Disposition ヘッダー:", contentDisposition);
+        // Content-Disposition ヘッダーを確認
+        const contentDisposition = response.headers.get("Content-Disposition");
+        console.log("Content-Disposition ヘッダー:", contentDisposition);
 
-      let fileName = "processed_audio.mp3"; // デフォルト名
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
-        if (match && match[1]) {
-          fileName = decodeURIComponent(match[1]); // ファイル名をデコード
+        let fileName = "processed_audio.mp3"; // デフォルト名
+
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
+          if (match && match[1]) {
+            fileName = decodeURIComponent(match[1]); // エンコードされたファイル名をデコード
+          }
         }
+
+        // Blobを使ってダウンロード
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        console.error("エラー:", response.statusText);
       }
 
-      console.log("ダウンロードするファイル名:", fileName);
-
-      // ファイルのダウンロード処理
-      const blob = await response.blob();
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = fileName;
-      link.click();
     } catch (error) {
       console.error("APIリクエストエラー:", error);
       alert(`APIリクエストに失敗しました: ${error}`);
@@ -87,6 +93,8 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+
 
 
 
