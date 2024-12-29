@@ -41,6 +41,7 @@ export default function Home() {
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setErrorMessage(""); // エラーメッセージをリセット
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/process`, {
         method: "POST",
@@ -57,11 +58,13 @@ export default function Home() {
       // ファイル名の取得とデコード
       const contentDisposition = response.headers.get("Content-Disposition");
       let fileName = "processed_audio.mp3"; // デフォルト名
+
       console.log("タイトル:" + contentDisposition);
+
       if (contentDisposition) {
         const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
-        if (match) {
-          fileName = decodeURIComponent(match[1]); // デコードされた日本語名を取得
+        if (match && match[1]) {
+          fileName = decodeURIComponent(match[1]); // ファイル名をデコード
         }
       }
 
@@ -70,12 +73,13 @@ export default function Home() {
       link.href = window.URL.createObjectURL(blob);
       link.download = fileName;
       link.click();
-    } catch (error: unknown) {
+    } catch (error) {
       alert(`APIリクエストに失敗しました: ${error}`);
     } finally {
       setIsLoading(false);
     }
   };
+
 
 
   return (
