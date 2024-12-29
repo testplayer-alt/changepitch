@@ -45,7 +45,7 @@ export default function Home() {
     try {
       console.log("送信データ:", data);
 
-      const response = await fetch(`https://changepitchmp3-sigma.vercel.app/process`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/process`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
