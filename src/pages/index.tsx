@@ -59,6 +59,7 @@ export default function Home() {
       // ファイル名の取得とデコード
       const contentDisposition = response.headers.get("Content-Disposition");
       let fileName = "processed_audio.mp3"; // デフォルト名
+      console.log(contentDisposition);
       if (contentDisposition) {
         const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
         if (match) {
