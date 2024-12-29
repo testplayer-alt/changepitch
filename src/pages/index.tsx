@@ -39,8 +39,6 @@ export default function Home() {
 
   // フォーム送信処理
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
-
     setIsLoading(true);
     setErrorMessage(""); // エラーメッセージをリセット
     try {
@@ -59,7 +57,7 @@ export default function Home() {
       // ファイル名の取得とデコード
       const contentDisposition = response.headers.get("Content-Disposition");
       let fileName = "processed_audio.mp3"; // デフォルト名
-      console.log(contentDisposition);
+      console.log("タイトル:" + contentDisposition);
       if (contentDisposition) {
         const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
         if (match) {
