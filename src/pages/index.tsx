@@ -38,63 +38,57 @@ export default function Home() {
   });
 
   // フォーム送信処理
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: any) => {
     setIsLoading(true);
     setErrorMessage(""); // エラーメッセージをリセット
 
     try {
-      console.log("送信データ:", data);
-
+      // URL の正規化
       const normalizedURL = data.URL.replace("youtu.be/", "www.youtube.com/watch?v=");
 
+      // リクエスト送信
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/process`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          URL: normalizedURL,  // フォームから送信されたURLを使用
-          pitch: data.pitch,  // ピッチも送信
+          URL: normalizedURL,
+          pitch: Number(data.pitch), // pitch を数値型に変換
         }),
       });
 
-      console.log("レスポンスステータス:", response.status);
-
-      if (response.ok) {
-        // コンテンツをバイナリとして取得
-        const blob = await response.blob();
-
-        // Content-Disposition ヘッダーを確認
-        const contentDisposition = response.headers.get("Content-Disposition");
-        console.log("Content-Disposition ヘッダー:", contentDisposition);
-
-        let fileName = "processed_audio.mp3"; // デフォルト名
-
-        if (contentDisposition) {
-          const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
-          if (match && match[1]) {
-            fileName = decodeURIComponent(match[1]); // エンコードされたファイル名をデコード
-          }
-        }
-
-        // Blobを使ってダウンロード
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-      } else {
-        console.error("エラー:", response.statusText);
+      if (!response.ok) {
+        const errorDetails = await response.json(); // エラー詳細を取得
+        console.error("エラー詳細:", errorDetails);
+        setErrorMessage(errorDetails.message || "リクエストエラーが発生しました");
+        return;
       }
 
+      // 成功時の処理
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let fileName = "processed_audio.mp3";
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
+        if (match && match[1]) {
+          fileName = decodeURIComponent(match[1]);
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error("APIリクエストエラー:", error);
-      alert(`APIリクエストに失敗しました: ${error}`);
+      setErrorMessage("APIリクエストに失敗しました");
     } finally {
       setIsLoading(false);
     }
   };
+
 
 
 
