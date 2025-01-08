@@ -45,13 +45,15 @@ export default function Home() {
     try {
       console.log("送信データ:", data);
 
+      const normalizedURL = data.URL.replace("youtu.be/", "www.youtube.com/watch?v=");
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/process`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          URL: data.URL,  // フォームから送信されたURLを使用
+          URL: normalizedURL,  // フォームから送信されたURLを使用
           pitch: data.pitch,  // ピッチも送信
         }),
       });
@@ -108,8 +110,6 @@ export default function Home() {
             <h3 className="text-center pt- place-content-end m-auto font-bold text-[2rem]">
               Youtube動画のピッチを変更する
             </h3>
-            {errorMessage && <div className="error-message">{errorMessage}</div>}
-
           </div>
           <div className="col-span-1 row-span-4" />
           <div className="col-span-2 row-span-6" />
