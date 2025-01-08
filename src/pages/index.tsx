@@ -38,7 +38,7 @@ export default function Home() {
   });
 
   // フォーム送信処理
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setErrorMessage(""); // エラーメッセージをリセット
 
