@@ -54,7 +54,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           URL: normalizedURL,
-          pitch: Number(data.pitch), // pitch を数値型に変換
+          pitch: data.pitch, // pitch を数値型に変換
         }),
       });
 
